@@ -50,6 +50,8 @@ class InvisibleFragment : Fragment() {
      */
     private lateinit var task: ChainTask
 
+    private var runnable: Runnable? = null
+
     /**
      * Used to get the result for request multiple permissions.
      */
@@ -123,7 +125,10 @@ class InvisibleFragment : Fragment() {
     ) {
         pb = permissionBuilder
         task = chainTask
-        requestNormalPermissionLauncher.launch(permissions.toTypedArray())
+        // Prevent the activity from knocking off the system notification pop-up window during the switching process
+        runnable?.let { handler.removeCallbacks(it) }
+        runnable = Runnable { requestNormalPermissionLauncher.launch(permissions.toTypedArray()) }
+        handler.postDelayed(runnable!!,100)
     }
 
     /**
@@ -290,8 +295,6 @@ class InvisibleFragment : Fragment() {
                 var shouldFinishTheTask = true // Indicate if we should finish the task
                 // If explainReasonCallback is not null and there are denied permissions. Try the ExplainReasonCallback.
                 if ((pb.explainReasonCallback != null || pb.explainReasonCallbackWithBeforeParam != null) && showReasonList.isNotEmpty()) {
-                    shouldFinishTheTask =
-                        false // shouldn't because ExplainReasonCallback handles it
                     if (pb.explainReasonCallbackWithBeforeParam != null) {
                         // callback ExplainReasonCallbackWithBeforeParam prior to ExplainReasonCallback
                         pb.explainReasonCallbackWithBeforeParam!!.onExplainReason(
@@ -347,8 +350,6 @@ class InvisibleFragment : Fragment() {
                         shouldShowRequestPermissionRationale(RequestBackgroundLocationPermission.ACCESS_BACKGROUND_LOCATION)
                     // If explainReasonCallback is not null and we should show rationale. Try the ExplainReasonCallback.
                     if ((pb.explainReasonCallback != null || pb.explainReasonCallbackWithBeforeParam != null) && shouldShowRationale) {
-                        goesToRequestCallback =
-                            false // shouldn't because ExplainReasonCallback handles it
                         val permissionsToExplain: MutableList<String> = ArrayList()
                         permissionsToExplain.add(RequestBackgroundLocationPermission.ACCESS_BACKGROUND_LOCATION)
                         if (pb.explainReasonCallbackWithBeforeParam != null) {
